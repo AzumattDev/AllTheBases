@@ -7,6 +7,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Text.RegularExpressions;
 using BepInEx;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -21,7 +22,7 @@ public class AzuCoveredTheBasesPlugin : BaseUnityPlugin
 
 {
     internal const string ModName = "AllTheBases";
-    internal const string ModVersion = "1.0.8";
+    internal const string ModVersion = "1.0.9";
     internal const string Author = "Azumatt";
     private const string ModGUID = Author + "." + ModName;
     private static string ConfigFileName = ModGUID + ".cfg";
@@ -99,10 +100,40 @@ public class AzuCoveredTheBasesPlugin : BaseUnityPlugin
         SetupWatcher();
     }
 
+    private void Start()
+    {
+        if (!Chainloader.PluginInfos.TryGetValue("Azumatt.BuildCameraCHE", out PluginInfo pluginInfo)) return;
+        pluginInfo.Instance.Config.TryGetEntry(new ConfigDefinition("General", "Distance Can Build From Avatar"), out ConfigEntry<float> distanceCanBuildFromAvatar);
+        if (distanceCanBuildFromAvatar == null) return;
+        MaximumPlacementDistance.Value = distanceCanBuildFromAvatar.Value;
+
+        // Subscribe to the BuildCameraCHE config change event
+        distanceCanBuildFromAvatar.SettingChanged += (sender, args) => { MaximumPlacementDistance.Value = distanceCanBuildFromAvatar.Value; };
+    }
+
 
     private void OnDestroy()
     {
         Config.Save();
+        BaseEitr.SettingChanged -= BasesChanged;
+        BaseCarryWeight.SettingChanged -= BasesChanged;
+        Basemegingjord.SettingChanged -= BasesChanged;
+        EitrIsEnabled.SettingChanged -= BasesChanged;
+        EitrRegen.SettingChanged -= BasesChanged;
+        EitrRegenDelay.SettingChanged -= BasesChanged;
+        StaminaIsEnabled.SettingChanged -= BasesChanged;
+        DodgeStaminaUsage.SettingChanged -= BasesChanged;
+        EncumberedStaminaDrain.SettingChanged -= BasesChanged;
+        SneakStaminaDrain.SettingChanged -= BasesChanged;
+        RunStaminaDrain.SettingChanged -= BasesChanged;
+        StaminaRegenDelay.SettingChanged -= BasesChanged;
+        StaminaRegen.SettingChanged -= BasesChanged;
+        SwimStaminaDrain.SettingChanged -= BasesChanged;
+        JumpStaminaDrain.SettingChanged -= BasesChanged;
+        DisableCameraShake.SettingChanged -= BasesChanged;
+        MaximumPlacementDistance.SettingChanged -= BasesChanged;
+        ShowDamageFlash.SettingChanged -= BasesChanged;
+        BaseAutoPickUpRange.SettingChanged -= BasesChanged;
     }
 
     private void SetupWatcher()
@@ -376,6 +407,48 @@ static class SeStatsSetupPatch
         if (__instance.m_addMaxCarryWeight > 0)
             __instance.m_addMaxCarryWeight = (__instance.m_addMaxCarryWeight - 150f) +
                                              AzuCoveredTheBasesPlugin.Basemegingjord.Value;
+    }
+}
+
+[HarmonyPatch(typeof(Character), nameof(Character.UpdateWalking))]
+public class UpdateWalkingPatch
+{
+    private static readonly FieldInfo FieldCharacterMCrouchSpeed = AccessTools.Field(typeof(Character), "m_crouchSpeed");
+
+    private static readonly MethodInfo GetSneakSpeedMethod = AccessTools.Method(typeof(UpdateWalkingPatch), nameof(GetSneakSpeed));
+
+    [HarmonyBefore("blacks7ar.SNEAKer")]
+    public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    {
+        List<CodeInstruction> source = instructions.ToList();
+        foreach (CodeInstruction item in source.Where((CodeInstruction t) => t.LoadsField(FieldCharacterMCrouchSpeed)))
+        {
+            item.opcode = OpCodes.Call;
+            item.operand = GetSneakSpeedMethod;
+        }
+
+        return source.AsEnumerable();
+    }
+
+    public static float GetSneakSpeed(Character __instance)
+    {
+        if (__instance.IsEncumbered() || !__instance.m_name.Contains("Human"))
+        {
+            return __instance.m_crouchSpeed;
+        }
+
+        return !Mathf.Approximately(AzuCoveredTheBasesPlugin.BaseSneakSpeed.Value, __instance.m_crouchSpeed) ? AzuCoveredTheBasesPlugin.BaseSneakSpeed.Value : __instance.m_crouchSpeed;
+    }
+}
+
+[HarmonyPatch(typeof(Container), nameof(Container.GetHoverText))]
+static class ContainerGetHoverTextPatch
+{
+    static void Postfix(Container __instance)
+    {
+        if (Player.m_localPlayer == null || InventoryGui.instance == null) return;
+        if (InventoryGui.instance.m_autoCloseDistance < AzuCoveredTheBasesPlugin.MaximumInteractDistance.Value)
+            InventoryGui.instance.m_autoCloseDistance = AzuCoveredTheBasesPlugin.MaximumInteractDistance.Value;
     }
 }
 
