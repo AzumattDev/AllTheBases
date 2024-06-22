@@ -22,7 +22,7 @@ public class AzuCoveredTheBasesPlugin : BaseUnityPlugin
 
 {
     internal const string ModName = "AllTheBases";
-    internal const string ModVersion = "1.0.9";
+    internal const string ModVersion = "1.0.10";
     internal const string Author = "Azumatt";
     private const string ModGUID = Author + "." + ModName;
     private static string ConfigFileName = ModGUID + ".cfg";
@@ -47,7 +47,7 @@ public class AzuCoveredTheBasesPlugin : BaseUnityPlugin
         BaseHealth = config("2 - Bases", "Base Health", 25.0f, "The base amount of health the player has.");
         BaseStamina = config("2 - Bases", "Base Stamina", 50.0f, "The base amount of stamina the player has.");
         BaseEitr = config("2 - Bases", "Base Eitr", 0.0f, "The base amount of Eitr the player has.");
-        BaseSneakSpeed = config("2 - Bases", "Base Sneak Speed", 2.0f, "The base sneak speed of the player.");
+        //BaseSneakSpeed = config("2 - Bases", "Base Sneak Speed", 2.0f, "The base sneak speed of the player.");
         BaseCarryWeight = config("2 - Bases", "Base Carry Weight", 300.0f, "The base amount of carry weight the player has.");
         Basemegingjord = config("2 - Bases", "Base Megingjord Boost", 150.0f, "The amount of carry weight the Megingjord gives");
         BaseUnarmedDamage = config("2 - Bases", "Base Unarmed Damage", 70.0f, "The base unarmed damage multiplied by your skill level. 120 will result in a maximum of up to 12 damage when you have a skill level of 10.");
@@ -410,7 +410,7 @@ static class SeStatsSetupPatch
     }
 }
 
-[HarmonyPatch(typeof(Character), nameof(Character.UpdateWalking))]
+/*[HarmonyPatch(typeof(Character), nameof(Character.UpdateWalking))]
 public class UpdateWalkingPatch
 {
     private static readonly FieldInfo FieldCharacterMCrouchSpeed = AccessTools.Field(typeof(Character), "m_crouchSpeed");
@@ -439,7 +439,7 @@ public class UpdateWalkingPatch
 
         return !Mathf.Approximately(AzuCoveredTheBasesPlugin.BaseSneakSpeed.Value, __instance.m_crouchSpeed) ? AzuCoveredTheBasesPlugin.BaseSneakSpeed.Value : __instance.m_crouchSpeed;
     }
-}
+}*/
 
 [HarmonyPatch(typeof(Container), nameof(Container.GetHoverText))]
 static class ContainerGetHoverTextPatch
