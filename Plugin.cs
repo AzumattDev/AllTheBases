@@ -22,7 +22,7 @@ public class AzuCoveredTheBasesPlugin : BaseUnityPlugin
 
 {
     internal const string ModName = "AllTheBases";
-    internal const string ModVersion = "1.0.10";
+    internal const string ModVersion = "1.0.11";
     internal const string Author = "Azumatt";
     private const string ModGUID = Author + "." + ModName;
     private static string ConfigFileName = ModGUID + ".cfg";
